@@ -186,34 +186,34 @@ def test(base_url):
 
     try:
         payload = {'Name': "hans", 'EMail': "hans@example.com", 'Password': 'hans'}
-        log.info(l.create_thing("user", payload))
+        log.info("User created: %s", l.create_thing("users", payload))
     except LsmsException as e:
-        if e.status_code != 401:
-            log.info(e)
+        if e.status_code not in (401, 403):
+            log.error(e)
             return
 
     try:
         payload = {'Name': "bernd", 'EMail': "bernd@example.com", 'Password': 'bernd'}
-        log.info(l.create_thing("user", payload))
+        log.info("User created: %s", l.create_thing("users", payload))
     except LsmsException as e:
-        if e.status_code != 401:
-            log.info(e)
+        if e.status_code not in (401, 403):
+            log.error(e)
             return
 
     try:
         payload = {'Name': "franz", 'EMail': "franz@example.com", 'Password': 'franz'}
-        log.info(l.create_thing("user", payload))
+        log.info("User created: %s", l.create_thing("users", payload))
     except LsmsException as e:
-        if e.status_code != 401:
-            log.info(e)
+        if e.status_code not in (401, 403):
+            log.error(e)
             return
 
     try:
         payload = {'Name': "franz", 'EMail': "franz@example.com", 'Password': 'franz'}
-        log.info(l.create_thing("user", payload))
+        log.info("User created: %s", l.create_thing("users", payload))
     except LsmsException as e:
-        if e.status_code != 401:
-            log.info(e)
+        if e.status_code not in (401, 403):
+            log.error(e)
             return
 
     l.set_credentials("bernd", "bernd")
@@ -225,24 +225,27 @@ def test(base_url):
                #'Owner': "",
                'Usage': "Description can be found in the [wiki](http://wiki.openlab-augsburg.de/openwiki:maschinen:prusarotti)",
                'Maintainer': "hans"}
-    thing_id = l.create_thing("item", payload)
-    log.info(thing_id)
+    thing_id = l.create_thing("items", payload)
+    log.info("Thing created: %s", thing_id)
 
     payload['Maintainer'] = "bernd"
     payload['Owner'] = "franz"
     payload['Id'] = int(thing_id)
-    log.info(l.update_thing("item", payload))
+    l.update_thing("items", payload)
+    log.info("Thing updated: %s", payload['Id'])
 
-    log.info(l.select_thing_log("item", payload['Id']))
+    log.info("Thing selected: %s", l.select_thing_log("items", payload['Id']))
 
-    items = l.select_all("item")
+    log.info("Deleting all things")
+    items = l.select_all("items")
     for item in items:
-        l.delete_thing("item", item['Id'])
+        l.delete_thing("items", item['Id'])
 
-    users = l.select_all("user")
+    log.info("Deleting all users")
+    users = l.select_all("users")
     for user in users:
         l.set_credentials(user['Name'], user['Name'])
-        l.delete_thing("user", user['Name'])
+        l.delete_thing("users", user['Name'])
 
 if __name__ == '__main__':
     import signal
