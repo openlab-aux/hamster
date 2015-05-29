@@ -3,7 +3,7 @@
 
 import logging
 import os
-from QtVariant import QtCore, QtGui, QtLoadUI
+from hamster.QtVariant import QtCore, QtGui, QtLoadUI
 
 log = logging.getLogger(__name__)
 logging.getLogger('PyQt4').setLevel(logging.WARNING)
@@ -11,7 +11,7 @@ logging.getLogger('PyQt4').setLevel(logging.WARNING)
 
 class ItemsWidget(QtGui.QWidget):
 
-    def __init__(self, parent=None):
+    def __init__(self, things, parent=None):
         super(ItemsWidget, self).__init__(parent)
 
         self.item_tree_view = ItemTreeView(self)
@@ -19,6 +19,7 @@ class ItemsWidget(QtGui.QWidget):
         self.item_prop_widget = ItemPropertiesWidget(None, self)
 
         self.__setup_ui()
+        self.__initialize_item_view(things)
 
     def __setup_ui(self):
         vert_widget = QtGui.QWidget(self)
@@ -35,20 +36,51 @@ class ItemsWidget(QtGui.QWidget):
 
         self.add_item_button.released.connect(self.item_added)
 
+    def __initialize_item_view(self, things):
+        for thing in things:
+            item = QtGui.QStandardItem(thing['Name'])
+            item.setData(thing)
+            self.item_tree_view.model.appendRow(item)
+
     def item_dropEvent(self, event):
         log.error("TODO: Implement item_dropEvent")
 
     def item_added(self):
-        log.error("TODO: Implement item_added")
+        thing_id = self.parent().create_thing({'Id': 0, "Name": "New thing"})
+        if not thing_id:
+            return
+
+        item = QtGui.QStandardItem("New thing")
+        item.setData({'Id': thing_id, "Name": "New thing"})
+        self.item_tree_view.model.appendRow(item)
 
     def item_deleted(self):
         log.error("TODO: Implement item_deleted")
 
     def item_changed(self, item):
         log.error("TODO: Implement item_changed")
+        item_data = item.data()
+        log.info(item_data)
 
-    def item_saved(self, data):
+    def item_saved(self):
         log.error("TODO: Implement item_saved")
+        #index = self.item_tree_view.currentIndex()
+        #item = self.item_tree_view.model.itemFromIndex(index)
+        #item_data = item.data()
+
+        self.item_prop_widget.get_data()
+
+    def selection_changed(self, current, previous):
+        if not current.indexes():
+            return
+
+        index = current.indexes()[0]
+        if not index.isValid():
+            return
+
+        item = self.item_tree_view.model.itemFromIndex(index)
+        item_data = item.data()
+        self.item_prop_widget.set_data(item_data)
 
 
 class ItemTreeView(QtGui.QTreeView):
@@ -65,6 +97,7 @@ class ItemTreeView(QtGui.QTreeView):
         self.setAnimated(True)
 
         self.model.itemChanged.connect(self.parent().item_changed)
+        self.selectionModel().selectionChanged.connect(self.parent().selection_changed)
 
     def dropEvent(self, event):
         self.parent().item_dropEvent(event)
@@ -86,6 +119,10 @@ class ItemPropertiesWidget(QtGui.QWidget):
             [self.owner_comboBox, lambda w: w.setEditable],
             [self.maintainer_comboBox, lambda w: w.setEditable],
         ]
+        self.input_dict = {
+            "Name": self.name_lineEdit.setText,
+            "Description": self.description_textEdit.setText
+        }
 
     def __setup_ui(self, data):
         QtLoadUI(os.path.join("hamster", "ItemPropertiesWidget.ui"), self)
@@ -98,6 +135,17 @@ class ItemPropertiesWidget(QtGui.QWidget):
 
         if data:
             log.error("TODO: Implement data fill for input widgets on creation")
+            self.set_data(data)
+
+    def set_data(self, data):
+        for key, value in data.iteritems():
+            f = self.input_dict.get(key, None)
+            if f:
+                log.debug("Set value for %s: %s", key, value)
+                f(value)
+
+    def get_data(self):
+        log.error("TODO: Implement get_data")
 
     def edit_properties(self):
         self.edit_state = not self.edit_state
@@ -124,7 +172,7 @@ class ItemPropertiesWidget(QtGui.QWidget):
 
     def save_item(self):
         log.error("TODO: Implement save_item")
-        # self.parent().item_saved()
+        self.parent().parent().item_saved()
 
 
 def test():
